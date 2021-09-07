@@ -26,6 +26,12 @@ var user_options = {
   "force_https":                  false
 }
 
+// ----------------------------------------------------------------------------- state
+
+var state = {
+  "current_window":               null
+}
+
 // ----------------------------------------------------------------------------- URL links to tools on Webcast Reloaded website
 
 var get_webcast_reloaded_url = function(video_url, vtt_url, referer_url, force_http, force_https) {
@@ -123,18 +129,42 @@ var process_dash_url = function(dash_url, vtt_url, referer_url) {
   process_video_url(/* video_url= */ dash_url, /* video_type= */ 'application/dash+xml', vtt_url, referer_url)
 }
 
-// ----------------------------------------------------------------------------- redirect to iframe
+// ----------------------------------------------------------------------------- iframe management
+
+var get_iframe = function() {
+  return state.current_window.document.querySelector('iframe[src*="showsport.xyz"]')
+}
+
+var get_iframe_url = function(iframe) {
+  if (!iframe)
+    iframe = get_iframe()
+
+  return iframe ? iframe.getAttribute('src') : null
+}
 
 var redirect_to_iframe = function() {
-  var iframe, iframe_url
+  var iframe_url = get_iframe_url()
 
-  iframe = unsafeWindow.document.querySelector('iframe[src*="showsport.xyz"]')
+  if (iframe_url)
+    GM_loadFrame(iframe_url, iframe_url)
+}
 
-  if (!iframe)
-    return
+var recurse_into_iframe = function() {
+  var iframe, recurse
 
-  iframe_url = iframe.getAttribute('src')
-  GM_loadFrame(iframe_url, iframe_url)
+  recurse = true
+
+  while (recurse) {
+    iframe = get_iframe()
+
+    if (!iframe) {
+      recurse = false
+      break
+    }
+
+    state.current_window = iframe.contentWindow.window
+    recurse              = process_live_videostream() !== true
+  }
 }
 
 // ----------------------------------------------------------------------------- process video within iframe
@@ -148,7 +178,7 @@ var process_live_videostream = function() {
     video_url_prefix: /^https?:\/\/jsonp\.afeld\.me\/\?url=(.+)$/i
   }
 
-  scripts = unsafeWindow.document.querySelectorAll('script:not([src])')
+  scripts = state.current_window.document.querySelectorAll('script:not([src])')
 
   for (var i=0; i < scripts.length; i++) {
     script = scripts[i]
@@ -181,6 +211,9 @@ var process_live_videostream = function() {
 // ----------------------------------------------------------------------------- bootstrap
 
 var init = function() {
+  if (state.current_window !== null) return
+  state.current_window = unsafeWindow.window
+
   var hostname        = unsafeWindow.location.hostname
   var is_inner_iframe = (hostname.indexOf('showsport.xyz') >= 0)
   var is_outer_frame  = !is_inner_iframe
@@ -202,7 +235,7 @@ var init = function() {
 
   if (is_inner_iframe) {
     if (!process_live_videostream() && is_webmonkey) {
-      redirect_to_iframe()
+      recurse_into_iframe()
     }
     return
   }
