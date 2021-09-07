@@ -1,0 +1,45 @@
+http://fans.freestreams-live1.com/live-tvchannel/
+http://fans.freestreams-live1.com/us-channels1/
+
+http://fans.freestreams-live1.com/watch-nbc-live/
+http://showsport.xyz/fsl/nbc0.php
+http://showsport.xyz/usa/nbc.php
+
+--------------------------------------------------------------------------------
+
+curl 'http://fans.freestreams-live1.com/watch-nbc-live/'
+    <iframe src="http://showsport.xyz/fsl/nbc0.php"></iframe>
+
+curl 'http://showsport.xyz/fsl/nbc0.php'
+    <script>if(window==window.top){var mustave="";window.location.replace("/nbc/");}else{var mustave=atob('L2hscy9zdHJlYW0ubTN1OD9jaD1zcG4=')}</script>
+    <iframe src="http://showsport.xyz/usa/nbc.php"></iframe>
+
+notes:
+  * javascript variable:
+    - value:
+        atob('L2hscy9zdHJlYW0ubTN1OD9jaD1zcG4=')
+          === '/hls/stream.m3u8?ch=spn'
+    - doesn't appear to be used
+
+curl 'http://showsport.xyz/usa/nbc.php'
+    <script>if(window==window.top){window.location.replace("/sorry");}</script>
+    <script>
+        var strm = window.atob('aHR0cHM6Ly9qc29ucC5hZmVsZC5tZS8/dXJsPWh0dHBzOi8vY2RuMS03cC50ZWxldXB0di5uZXQvNDE1MmMyYjItMDE2ZS00NzIyLTlmYTMtNmFhNGMxNDBjZGRjL2luZGV4Lm0zdTg=') ;
+        var player = new Clappr.Player({
+            source: strm,
+            //...
+            parentId: "#player",
+        });
+
+notes:
+  * javascript variable:
+    - value:
+        window.atob('aHR0cHM6Ly9qc29ucC5hZmVsZC5tZS8/dXJsPWh0dHBzOi8vY2RuMS03cC50ZWxldXB0di5uZXQvNDE1MmMyYjItMDE2ZS00NzIyLTlmYTMtNmFhNGMxNDBjZGRjL2luZGV4Lm0zdTg=')
+          === 'https://jsonp.afeld.me/?url=https://cdn1-7p.teleuptv.net/4152c2b2-016e-4722-9fa3-6aa4c140cddc/index.m3u8'
+    - the "url" querystring parameter is all that's needed
+  * HLS URL:
+    - Referer request header must be empty!
+      * HLS video host responds with 403 when the header is present, regardless of its value
+    - plays directly in Chromecast
+
+--------------------------------------------------------------------------------

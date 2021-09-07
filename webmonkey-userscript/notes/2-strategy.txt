@@ -1,0 +1,31 @@
+strategy for userscript:
+
+  * in WebMonkey:
+    - userscript only runs in top-level window; not in iframes
+    - for this reason, the userscript in the top-level window:
+      * checks domain for top-level window
+        - if 'showsport.xyz':
+          * check for HLS url
+            - if found: open HLS url in external player
+            - if not found: look for nested iframe
+              * if found: recurse into its window
+              * if not found: quit
+        - otherwise:
+          * look for an iframe hosted by 'showsport.xyz'
+            - if found:
+                call:
+                  GM_loadFrame(urlFrame, urlParent)
+                where:
+                  urlParent === urlFrame
+                since:
+                  - userscript that runs in top-level window needs same-origin as iframe
+                  - top-level window doesn't actually load HTML content from urlParent
+            - if not found: quit
+
+  * in other GreaseMonkey userscript runners (ex: TamperMonkey)
+    - userscript runs directly in iframe
+    - for this reason, the userscript:
+      * only needs to match the 'showsport.xyz' domain
+      * check for HLS url
+        - if found: open HLS url in external player
+        - if not found: quit
