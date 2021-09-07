@@ -1,13 +1,16 @@
 http://fans.freestreams-live1.com/live-tvchannel/
 http://fans.freestreams-live1.com/us-channels1/
 
-http://fans.freestreams-live1.com/watch-nbc-live/
+http://fans.freestreams-live1.com/nbc/
 http://showsport.xyz/fsl/nbc0.php
 http://showsport.xyz/usa/nbc.php
 
+http://fans.freestreams-live1.com/hbo-hd/
+http://showsport.xyz/usa/hbo.php
+
 --------------------------------------------------------------------------------
 
-curl 'http://fans.freestreams-live1.com/watch-nbc-live/'
+curl 'http://fans.freestreams-live1.com/nbc/'
     <iframe src="http://showsport.xyz/fsl/nbc0.php"></iframe>
 
 curl 'http://showsport.xyz/fsl/nbc0.php'
@@ -37,9 +40,55 @@ notes:
         window.atob('aHR0cHM6Ly9qc29ucC5hZmVsZC5tZS8/dXJsPWh0dHBzOi8vY2RuMS03cC50ZWxldXB0di5uZXQvNDE1MmMyYjItMDE2ZS00NzIyLTlmYTMtNmFhNGMxNDBjZGRjL2luZGV4Lm0zdTg=')
           === 'https://jsonp.afeld.me/?url=https://cdn1-7p.teleuptv.net/4152c2b2-016e-4722-9fa3-6aa4c140cddc/index.m3u8'
     - the "url" querystring parameter is all that's needed
+
+curl 'https://cdn1-7p.teleuptv.net/4152c2b2-016e-4722-9fa3-6aa4c140cddc/index.m3u8' --head
+  403 Forbidden
+
+curl 'https://cdn1-7p.teleuptv.net/4152c2b2-016e-4722-9fa3-6aa4c140cddc/index.m3u8' --head -H 'User-Agent: Chrome/90'
+  200 OK
+
+curl 'https://cdn1-7p.teleuptv.net/4152c2b2-016e-4722-9fa3-6aa4c140cddc/index.m3u8' --head -H 'User-Agent: Chrome/90' -H 'Referer: http://showsport.xyz/usa/nbc.php'
+  403 Forbidden
+
+notes:
   * HLS URL:
     - Referer request header must be empty!
-      * HLS video host responds with 403 when the header is present, regardless of its value
+    - plays directly in Chromecast
+
+--------------------------------------------------------------------------------
+
+curl 'http://fans.freestreams-live1.com/nbc/'
+    <iframe src="http://showsport.xyz/usa/hbo.php"></iframe>
+
+curl 'http://showsport.xyz/usa/hbo.php'
+    <script>if(window==window.top){window.location.replace("/sorry");}</script>
+    <script>
+        var strm = window.atob('aHR0cHM6Ly90cjRlLmhlcm9rdWFwcC5jb20vaHR0cDovLzUxLjc5LjgyLjIzMTo4MDgwL1VTX0hCT19FQVNUL3ZpZGVvLm0zdTg=') ;
+        var player = new Clappr.Player({
+            source: strm,
+            //...
+            parentId: "#player",
+        });
+
+notes:
+  * javascript variable:
+    - value:
+        window.atob('aHR0cHM6Ly90cjRlLmhlcm9rdWFwcC5jb20vaHR0cDovLzUxLjc5LjgyLjIzMTo4MDgwL1VTX0hCT19FQVNUL3ZpZGVvLm0zdTg=')
+          === 'https://tr4e.herokuapp.com/http://51.79.82.231:8080/US_HBO_EAST/video.m3u8'
+    - the url embedded into the pathname is all that's needed
+
+curl 'http://51.79.82.231:8080/US_HBO_EAST/video.m3u8' --head
+  200 OK
+
+curl 'http://51.79.82.231:8080/US_HBO_EAST/video.m3u8' --head -H 'User-Agent: Chrome/90'
+  200 OK
+
+curl 'http://51.79.82.231:8080/US_HBO_EAST/video.m3u8' --head -H 'User-Agent: Chrome/90' -H 'Referer: http://showsport.xyz/usa/hbo.php'
+  200 OK
+
+notes:
+  * HLS URL:
+    - Referer request header is not necessary
     - plays directly in Chromecast
 
 --------------------------------------------------------------------------------

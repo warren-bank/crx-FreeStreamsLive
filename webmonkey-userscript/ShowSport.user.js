@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ShowSport.xyz
 // @description  Watch videos in external player.
-// @version      1.0.0
+// @version      1.0.1
 // @match        *://showsport.xyz/*
 // @match        *://*.showsport.xyz/*
 // @match        *://freestreams-live1.com/*
@@ -170,12 +170,11 @@ var recurse_into_iframe = function() {
 // ----------------------------------------------------------------------------- process video within iframe
 
 var process_live_videostream = function() {
-  var regex, scripts, script, encoded_video_url, video_url
+  var regex, scripts, script, encoded_video_url, offset_index, video_url
 
   regex = {
     whitespace:       /[\r\n\t]+/g,
-    video_url:        /^.*window\.atob\s*\(\s*['"]([^'"]+)['"]\s*\).*$/,
-    video_url_prefix: /^https?:\/\/jsonp\.afeld\.me\/\?url=(.+)$/i
+    video_url:        /^.*window\.atob\s*\(\s*['"]([^'"]+)['"]\s*\).*$/
   }
 
   scripts = state.current_window.document.querySelectorAll('script:not([src])')
@@ -190,11 +189,14 @@ var process_live_videostream = function() {
 
       try {
         encoded_video_url = unsafeWindow.atob(encoded_video_url)
+        offset_index      = encoded_video_url.toLowerCase().lastIndexOf('http')
 
-        if (regex.video_url_prefix.test(encoded_video_url)) {
-          encoded_video_url = encoded_video_url.replace(regex.video_url_prefix, '$1')
-          video_url         = unsafeWindow.decodeURIComponent(encoded_video_url)
-        }
+        if (offset_index === -1)
+          continue
+        if (offset_index === 0)
+          video_url = encoded_video_url
+        else
+          video_url = unsafeWindow.decodeURIComponent( encoded_video_url.substring(offset_index, encoded_video_url.length) )
       }
       catch(e) {}
       break
