@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         FreeStreams Live (FSL)
 // @description  Watch videos in external player.
-// @version      1.0.3
-// @include      /^https?:\/\/(?:[^\.\/]*\.)*(?:showsport\.(?:xyz)|wikisport\.(?:se)|fiveyardlab\.(?:com)|freestreams-live1\.(?:com)|fsl-stream\.(?:im))\/.*$/
+// @version      1.0.4
+// @include      /^https?:\/\/(?:[^\.\/]*\.)*(?:showsport\.(?:xyz)|wikisport\.(?:se)|fiveyardlab\.(?:com)|livehdplay\.(?:ru)|olalivehdplay\.(?:ru)|poscitechs\.(?:shop)|freestreams-live1\.(?:com)|fsl-stream\.(?:im))\/.*$/
 // @icon         https://a.fsl-stream.im/favicon.ico
 // @run-at       document-end
 // @grant        unsafeWindow
@@ -149,8 +149,11 @@ var process_dash_url = function(dash_url, vtt_url, referer_url) {
 
 var get_iframe = function() {
   return
-    state.current_window.document.querySelector('iframe[src*="wikisport.se"]')    ||
-    state.current_window.document.querySelector('iframe[src*="fiveyardlab.com"]') ||
+    state.current_window.document.querySelector('iframe[src*="wikisport.se"]')     ||
+    state.current_window.document.querySelector('iframe[src*="fiveyardlab.com"]')  ||
+    state.current_window.document.querySelector('iframe[src*="livehdplay.ru"]')    ||
+    state.current_window.document.querySelector('iframe[src*="olalivehdplay.ru"]') ||
+    state.current_window.document.querySelector('iframe[src*="poscitechs.shop"]')  ||
     state.current_window.document.querySelector('iframe[src*="showsport.xyz"]')
 }
 
@@ -193,8 +196,9 @@ var process_live_videostream = function() {
 
   regex = {
     whitespace:       /[\r\n\t]+/g,
-    video_url_1:      /^.*window\.atob\s*\(\s*['"]([^'"]+)['"]\s*\).*$/,
-    video_url_2:      /^.*(\["h","t","t","p",[^\]]+\])\.join.*$/
+    video_url_1:      /^.*['"](http[^'"]+\.m3u8)['"].*$/,
+    video_url_2:      /^.*window\.atob\s*\(\s*['"]([^'"]+)['"]\s*\).*$/,
+    video_url_3:      /^.*(\["h","t","t","p",[^\]]+\])\.join.*$/
   }
 
   scripts = state.current_window.document.querySelectorAll('script:not([src])')
@@ -205,7 +209,12 @@ var process_live_videostream = function() {
     script = script.replace(regex.whitespace, ' ')
 
     if (regex.video_url_1.test(script)) {
-      encoded_video_url = script.replace(regex.video_url_1, '$1')
+      video_url = script.replace(regex.video_url_1, '$1')
+      break
+    }
+
+    if (regex.video_url_2.test(script)) {
+      encoded_video_url = script.replace(regex.video_url_2, '$1')
 
       try {
         encoded_video_url = unsafeWindow.atob(encoded_video_url)
@@ -222,8 +231,8 @@ var process_live_videostream = function() {
       break
     }
 
-    if (regex.video_url_2.test(script)) {
-      encoded_video_url = script.replace(regex.video_url_2, '$1')
+    if (regex.video_url_3.test(script)) {
+      encoded_video_url = script.replace(regex.video_url_3, '$1')
 
       try {
         encoded_video_url = unsafeWindow.JSON.parse(encoded_video_url)
@@ -251,7 +260,13 @@ var init = function() {
   state.current_window = unsafeWindow.window
 
   var hostname        = unsafeWindow.location.hostname
-  var is_inner_iframe = (hostname.indexOf('wikisport.se') >= 0) || (hostname.indexOf('fiveyardlab.com') >= 0) || (hostname.indexOf('showsport.xyz') >= 0)
+  var is_inner_iframe =
+    (hostname.indexOf('wikisport.se')     >= 0) ||
+    (hostname.indexOf('fiveyardlab.com')  >= 0) ||
+    (hostname.indexOf('livehdplay.ru')    >= 0) ||
+    (hostname.indexOf('olalivehdplay.ru') >= 0) ||
+    (hostname.indexOf('poscitechs.shop')  >= 0) ||
+    (hostname.indexOf('showsport.xyz')    >= 0)
   var is_outer_frame  = !is_inner_iframe
   var is_webmonkey    = false
 
