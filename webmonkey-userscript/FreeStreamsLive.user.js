@@ -1,18 +1,15 @@
 // ==UserScript==
-// @name         ShowSport.xyz
+// @name         FreeStreams Live (FSL)
 // @description  Watch videos in external player.
-// @version      1.0.2
-// @match        *://showsport.xyz/*
-// @match        *://*.showsport.xyz/*
-// @match        *://freestreams-live1.com/*
-// @match        *://*.freestreams-live1.com/*
-// @icon         http://fans.freestreams-live1.com/favicon.ico
+// @version      1.0.3
+// @include      /^https?:\/\/(?:[^\.\/]*\.)*(?:showsport\.(?:xyz)|wikisport\.(?:se)|fiveyardlab\.(?:com)|freestreams-live1\.(?:com)|fsl-stream\.(?:im))\/.*$/
+// @icon         https://a.fsl-stream.im/favicon.ico
 // @run-at       document-end
 // @grant        unsafeWindow
-// @homepage     https://github.com/warren-bank/crx-ShowSport/tree/webmonkey-userscript/es5
-// @supportURL   https://github.com/warren-bank/crx-ShowSport/issues
-// @downloadURL  https://github.com/warren-bank/crx-ShowSport/raw/webmonkey-userscript/es5/webmonkey-userscript/ShowSport.user.js
-// @updateURL    https://github.com/warren-bank/crx-ShowSport/raw/webmonkey-userscript/es5/webmonkey-userscript/ShowSport.user.js
+// @homepage     https://github.com/warren-bank/crx-FreeStreamsLive/tree/webmonkey-userscript/es5
+// @supportURL   https://github.com/warren-bank/crx-FreeStreamsLive/issues
+// @downloadURL  https://github.com/warren-bank/crx-FreeStreamsLive/raw/webmonkey-userscript/es5/webmonkey-userscript/FreeStreamsLive.user.js
+// @updateURL    https://github.com/warren-bank/crx-FreeStreamsLive/raw/webmonkey-userscript/es5/webmonkey-userscript/FreeStreamsLive.user.js
 // @namespace    warren-bank
 // @author       Warren Bank
 // @copyright    Warren Bank
@@ -151,7 +148,10 @@ var process_dash_url = function(dash_url, vtt_url, referer_url) {
 // ----------------------------------------------------------------------------- iframe management
 
 var get_iframe = function() {
-  return state.current_window.document.querySelector('iframe[src*="showsport.xyz"]')
+  return
+    state.current_window.document.querySelector('iframe[src*="wikisport.se"]')    ||
+    state.current_window.document.querySelector('iframe[src*="fiveyardlab.com"]') ||
+    state.current_window.document.querySelector('iframe[src*="showsport.xyz"]')
 }
 
 var get_iframe_url = function(iframe) {
@@ -193,7 +193,8 @@ var process_live_videostream = function() {
 
   regex = {
     whitespace:       /[\r\n\t]+/g,
-    video_url:        /^.*window\.atob\s*\(\s*['"]([^'"]+)['"]\s*\).*$/
+    video_url_1:      /^.*window\.atob\s*\(\s*['"]([^'"]+)['"]\s*\).*$/,
+    video_url_2:      /^.*(\["h","t","t","p",[^\]]+\])\.join.*$/
   }
 
   scripts = state.current_window.document.querySelectorAll('script:not([src])')
@@ -203,8 +204,8 @@ var process_live_videostream = function() {
     script = script.innerHTML
     script = script.replace(regex.whitespace, ' ')
 
-    if (regex.video_url.test(script)) {
-      encoded_video_url = script.replace(regex.video_url, '$1')
+    if (regex.video_url_1.test(script)) {
+      encoded_video_url = script.replace(regex.video_url_1, '$1')
 
       try {
         encoded_video_url = unsafeWindow.atob(encoded_video_url)
@@ -216,6 +217,20 @@ var process_live_videostream = function() {
           video_url = encoded_video_url
         else
           video_url = unsafeWindow.decodeURIComponent( encoded_video_url.substring(offset_index, encoded_video_url.length) )
+      }
+      catch(e) {}
+      break
+    }
+
+    if (regex.video_url_2.test(script)) {
+      encoded_video_url = script.replace(regex.video_url_2, '$1')
+
+      try {
+        encoded_video_url = unsafeWindow.JSON.parse(encoded_video_url)
+        encoded_video_url = encoded_video_url.join('')
+        encoded_video_url = encoded_video_url.replace('////', '//')
+
+        video_url = encoded_video_url
       }
       catch(e) {}
       break
@@ -236,7 +251,7 @@ var init = function() {
   state.current_window = unsafeWindow.window
 
   var hostname        = unsafeWindow.location.hostname
-  var is_inner_iframe = (hostname.indexOf('showsport.xyz') >= 0)
+  var is_inner_iframe = (hostname.indexOf('wikisport.se') >= 0) || (hostname.indexOf('fiveyardlab.com') >= 0) || (hostname.indexOf('showsport.xyz') >= 0)
   var is_outer_frame  = !is_inner_iframe
   var is_webmonkey    = false
 
